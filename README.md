@@ -24,4 +24,4 @@ docker-compose up -d
 ```
 
 Want to see the entire flow of the pipeline? 
-[Click here to view the ETL pipeline and PowerBI dashboard visuals](./documentation/screenshots.md)
+[Click here to view the ETL visuals](./documentation/screenshots.md)
