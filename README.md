@@ -23,5 +23,5 @@ To execute the code locally as a yaml file, please use the command;
 docker-compose up -d
 ```
 
-Want to see how the entire flow of the pipeline? 
+Want to see the entire flow of the pipeline? 
 [Click here to view the ETL pipeline and PowerBI dashboard visuals](./documentation/screenshots.md)
