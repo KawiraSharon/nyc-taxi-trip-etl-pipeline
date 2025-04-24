@@ -1,0 +1,136 @@
+# This file represents all tasks for the ETL Pipeline for NYC Taxi Trip Data
+# 
+
+id: nycTaxi
+namespace: kestra-task
+
+tasks:
+  # ------------------------------------------------------------------------------------------------------------------------
+  # 1. Extraction Phase
+  # ------------------------------------------------------------------------------------------------------------------------
+  - id: extracting_nyc_taxi
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    beforeCommands:
+      - python3 -m venv .venv
+      - . .venv/bin/activate
+      - pip install pandas numpy requests pyarrow
+    outputFiles:
+      - nyc_taxi_data.csv
+    script: |
+      import pandas as pd
+      import numpy as np
+      import requests
+      from zipfile import ZipFile
+      from io import BytesIO
+
+      # Set Kaggle API credentials
+      KAGGLE_USERNAME = "sharonmungania"
+      KAGGLE_KEY = "c4942b83fcf67954e6e6a6709feecdea"
+
+      # Download zipped dataset from Kaggle
+      url = "https://www.kaggle.com/api/v1/datasets/download/albertjavier/yellow-tripdata-2023"
+      headers = {"Authorization": f"Bearer {KAGGLE_KEY}"}
+      response = requests.get(url, headers=headers, stream=True)
+
+      # Extract the Parquet file and convert to CSV
+      with ZipFile(BytesIO(response.content)) as zip_file:
+        with zip_file.open("yellow_tripdata_2023-01.parquet") as parquet_file:
+          df = pd.read_parquet(parquet_file)
+          df.to_csv('nyc_taxi_data.csv', index=False)
+
+  # ------------------------------------------------------------------------------------------------------------------------
+  # 2. Transformation Phase
+  # ------------------------------------------------------------------------------------------------------------------------
+  - id: data_transformation
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    beforeCommands:
+      - python3 -m venv .venv
+      - . .venv/bin/activate
+      - pip install pandas
+    outputFiles:
+      - transformed_data.csv
+    script: |
+      import pandas as pd
+
+      # Load extracted data
+      df = pd.read_csv('{{ outputs.extracting_nyc_taxi.outputFiles["nyc_taxi_data.csv"] }}')
+
+      # Clean and filter data
+      df = df[(df['passenger_count'] > 0) & (df['trip_distance'] > 0)].copy()
+      df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
+      df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
+
+      # Add derived column for trip duration (in minutes)
+      df['trip_duration'] = (df['tpep_dropoff_datetime'] - df['tpep_pickup_datetime']).dt.total_seconds() / 60
+      df = df[df['trip_duration'] <= 180]  # Remove outliers > 3 hours
+      df = df.sample(n=20000, random_state=42)  # Optional sampling for performance
+
+      # Save transformed data
+      df.to_csv('transformed_data.csv', index=False)
+
+  # ------------------------------------------------------------------------------------------------------------------------------
+  # 3. Loading Phase
+  # ------------------------------------------------------------------------------------------------------------------------------------------------
+  - id: loading_nyc_taxi_data
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    beforeCommands:
+      - python3 -m venv .venv
+      - . .venv/bin/activate
+      - pip install pandas psycopg2-binary
+    script: |
+      import pandas as pd
+      import psycopg2
+      from psycopg2.extras import execute_batch
+
+      df = pd.read_csv('{{ outputs.data_transformation.outputFiles["transformed_data.csv"] }}')
+
+      # PostgreSQL connection
+      conn = psycopg2.connect(
+        host="postgres",
+        database="kestra",
+        user="kestra",
+        password="k3str4"
+      )
+      cursor = conn.cursor()
+
+      # Create table schema
+      cursor.execute("""
+        CREATE TABLE IF NOT EXISTS nyc_taxi_trips (
+          VendorID INT,
+          tpep_pickup_datetime TIMESTAMPTZ,
+          tpep_dropoff_datetime TIMESTAMPTZ,
+          passenger_count INT,
+          trip_distance FLOAT,
+          RatecodeID INT,
+          store_and_fwd_flag VARCHAR,
+          PULocationID INT,
+          DOLocationID INT,
+          payment_type INT,
+          fare_amount FLOAT,
+          extra FLOAT,
+          mta_tax FLOAT,
+          tip_amount FLOAT,
+          tolls_amount FLOAT,
+          improvement_surcharge FLOAT,
+          total_amount FLOAT,
+          congestion_surcharge FLOAT,
+          airport_fee FLOAT,
+          trip_duration INT
+        )
+      """)
+      conn.commit()
+
+      # Insert transformed data into PostgreSQL
+      insert_query = """
+        INSERT INTO nyc_taxi_trips VALUES (
+          %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        )
+      """
+      execute_batch(cursor, insert_query, [tuple(row) for row in df.to_numpy()])
+      conn.commit()
