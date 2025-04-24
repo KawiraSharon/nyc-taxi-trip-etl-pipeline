@@ -1,6 +1,6 @@
 ## ETL Pipeline and Dashboard Walkthrough using Screenshots
 
-This file tells the story on how data was extracted FROM Kaggle using Kestra through the way it was visualized on PowerBI
+This file tells the story of how Kestra extracted the data From Kaggle using an API all the way to how it was visualized on PowerBI
 
 ---------------------------------------------------------------------------------------------------------
 ### Kestra Orchestration
