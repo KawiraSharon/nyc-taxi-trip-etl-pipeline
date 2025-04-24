@@ -24,13 +24,13 @@ Kestra displays a visual of all three tasks successfully executed.
 ![Success of ETL Execution](../screenshots/kestra-success.png)
 ---------------------------------------------------------------------------------------------------------
 
----------------------------------------------------------------------------------------------------------
-<!-- ### PostgreSQL instance on Docker
+<!---------------------------------------------------------------------------------------------------------
+### PostgreSQL instance on Docker
 A containerized instance of PostgreSQL on Docker Engine
-![PostgreSQL on Docker]()-->
+![PostgreSQL on Docker]()
 ---------------------------------------------------------------------------------------------------------
 
----------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------->
 ### PowerBI Visualization
 The Star-Schema is created as a visualization of the metrics to provide insights with ease.
 ![PowerBI Dashboard](../screenshots/powerbi-dashboard.png)
