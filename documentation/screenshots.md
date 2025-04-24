@@ -22,6 +22,7 @@ Kestra loads the output of the previous step which is a filtered csv file onto a
 ### Step 4: Success in Kestra Orchestration
 Kestra displays a visual of all three tasks successfully executed.
 ![Success of ETL Execution](../screenshots/kestra-success.png)
+
 ---------------------------------------------------------------------------------------------------------
 
 <!---------------------------------------------------------------------------------------------------------
@@ -34,4 +35,5 @@ A containerized instance of PostgreSQL on Docker Engine
 ### PowerBI Visualization
 The Star-Schema is created as a visualization of the metrics to provide insights with ease.
 ![PowerBI Dashboard](../screenshots/powerbi-dashboard.png)
+
 ---------------------------------------------------------------------------------------------------------
