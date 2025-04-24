@@ -21,3 +21,7 @@ The entire pipeline runs within the [Kestra](https://kestra.io/) orchestration e
 To execute the code locally as a yaml file, please use the command;
 ```bash
 docker-compose up -d
+```
+
+Want to see how the entire flow of the pipeline? 
+[Click here to view the ETL pipeline and PowerBI dashboard visuals](./documentation/screenshots.md)
